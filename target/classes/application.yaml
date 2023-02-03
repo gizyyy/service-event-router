@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: service-event-router
+  jackson:
+    deserialization.adjust-dates-to-context-time-zone: false
+    serialization.WRITE_DATES_AS_TIMESTAMPS: true
+    default-property-inclusion: always    
+  cloud:
+    function:
+      routing:
+        enabled: true
+      definition: partnerAFilter;partnerBFilter      
+    stream:
+       kafka:
+        binder:
+          consumerProperties:
+            partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+            autoCreateTopics: false
+            auto.offset.reset: latest
+            max.poll.records: 10
+            enable.auto.commit: false
+          brokers: localhost:9092
+       bindings:
+        partnerAFilter-in-0:
+          destination: topicA
+          content-type: application/vnd.cloudevent+json
+          group: aGroup                   
+          consumer:
+            enableDlq: true
+            dlqPartitions: 1
+            dlqName: error.topicA
+            useNativeDecoding: true
+            concurrency: 10
+            start-offset: latest
+        partnerBFilter-in-0:
+          destination: topicB
+          content-type: application/vnd.cloudevent+json
+          group: bGroup                   
+          consumer:
+            enableDlq: true
+            dlqPartitions: 1
+            dlqName: error.topicB
+            useNativeDecoding: true
+            concurrency: 10
+            start-offset: latest
+        
